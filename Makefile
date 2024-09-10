@@ -1,3 +1,5 @@
+include .env
+
 # ==================================================================================== #
 # HELPERS
 # ==================================================================================== #
@@ -8,57 +10,70 @@ help:
 	@echo 'Usage:'
 	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' |  sed -e 's/^/ /'
 
-# ==================================================================================== #
-# QUALITY CONTROL
-# ==================================================================================== #
-
-## audit: run quality control checks
-.PHONY: audit
-audit: test
-	go mod tidy -diff
-	go mod verify
-	test -z "$(shell gofmt -l .)" 
-	go vet ./...
-
-## test: run all tests
-.PHONY: test
-test:
-	go test -v ./...
+.PHONY: confirm
+confirm:
+	@echo -n 'Are you sure? [y/N] ' && read ans && [ $${ans:-N} = y ]
 
 # ==================================================================================== #
 # DEVELOPMENT
 # ==================================================================================== #
 
-## tidy: tidy modfiles and format .go files
+## run/api: run the cmd/api application
+.PHONY: run/api
+run/api:
+	go run ./cmd/api -db-dsn=${GREENLIGHT_DB_DSN}
+
+## db/psql: connect to the database using psql
+.PHONY: db/psql
+db/psql:
+	psql ${GREENLIGHT_DB_DSN}
+
+## db/migrations/new name=$1: create a new database migration
+.PHONY: db/migrations/new
+db/migrations/new:
+	@echo 'Creating migration files for ${name}'
+	migrate create -seq -ext=.sql -dir=./migrations ${name}
+
+## db/migrations/up: apply all up database migrations
+.PHONY: db/migrations/up
+db/migrations/up: confirm
+	@echo 'Running up migrations...'
+	migrate -path ./migrations -database ${GREENLIGHT_DB_DSN} up
+
+# ==================================================================================== #
+# QUALITY CONTROL
+# ==================================================================================== #
+
+## tidy: format all .go files, and tidy and vendor module dependencies
 .PHONY: tidy
 tidy:
-	go mod tidy -v
+	@echo 'Formatting .go files...'
 	go fmt ./...
+	@echo 'Tidying module dependencies...'
+	go mod tidy
+	@echo 'Verifying and vendoring module dependencies...'
+	go mod verify
+	go mod vendor
 
-## build: build the cmd/api application
-.PHONY: build
-build:
-	go build -o=./tmp/bin/api ./cmd/api
+## audit: run quality control checks
+.PHONY: audit
+audit:
+	@echo 'Checking module dependencies'
+	go mod tidy -diff
+	go mod verify
+	@echo 'Vetting code...'
+	go vet ./...
+	staticcheck ./...
+	@echo 'Running tests...'
+	go test -race -vet=off ./...
 
-## run: run the cmd/api application
-.PHONY: run
-run:
-	go run ./cmd/api
+# ==================================================================================== #
+# BUILD
+# ==================================================================================== #
 
-## watch: run the application with reloading on file changes
-.PHONY: watch
-watch:
-	@if command -v air > /dev/null; then \
-		air; \
-		echo "Watching...";\
-	else \
-		read -p "Go's 'air' is not installed on your machine. Do you want to install it? [Y/n] " choice; \
-		if [ "$$choice" != "n" ] && [ "$$choice" != "N" ]; then \
-			go install github.com/air-verse/air@latest; \
-			air; \
-			echo "Watching...";\
-		else \
-			echo "You chose not to install air. Exiting..."; \
-			exit 1; \
-		fi; \
-	fi
+## build/api: build the cmd/api application
+.PHONY: build/api
+build/api:
+	@echo 'Building cmd/api...'
+	go build -ldflags='-s -w -X main.version=${VERSION}' -o=./bin/api ./cmd/api
+	GOOS=linux GOARCH=amd64 go build -ldflags='-s -w -X main.version=${VERSION}' -o=./bin/linux_amd64/api ./cmd/api
