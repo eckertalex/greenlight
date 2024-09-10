@@ -23,6 +23,16 @@ confirm:
 run/api:
 	go run ./cmd/api -db-dsn=${GREENLIGHT_DB_DSN} -smtp-host=${GREENLIGHT_SMTP_HOST} -smtp-username=${GREENLIGHT_SMTP_USERNAME} -smtp-password=${GREENLIGHT_SMTP_PASSWORD} -smtp-sender=${GREENLIGHT_SMTP_SENDER}
 
+## watch: run the application with reloading on file changes
+.PHONY: watch/api
+watch/api:
+	@if command -v air > /dev/null; then \
+		air --build.bin "./bin/api -db-dsn=${GREENLIGHT_DB_DSN} -smtp-host=${GREENLIGHT_SMTP_HOST} -smtp-username=${GREENLIGHT_SMTP_USERNAME} -smtp-password=${GREENLIGHT_SMTP_PASSWORD} -smtp-sender=${GREENLIGHT_SMTP_SENDER}"; \
+		echo "Watching...";\
+	else \
+		echo "Go's 'air' is not installed. Please run 'go install github.com/air-verse/air@latest'";\
+	fi
+
 ## db/psql: connect to the database using psql
 .PHONY: db/psql
 db/psql:
