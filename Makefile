@@ -12,7 +12,12 @@ help:
 
 .PHONY: confirm
 confirm:
-	@echo "Are you sure? [y/N] \c" && read ans && [ $${ans:-N} = y ]
+	@echo "$(message) (y/n) \c"
+	@read answer; \
+	if [ "$$answer" != "y" ]; then \
+		echo "Aborting."; \
+		exit 1; \
+	fi
 
 # ==================================================================================== #
 # DEVELOPMENT
@@ -21,14 +26,24 @@ confirm:
 ## run/api: run the cmd/api application
 .PHONY: run/api
 run/api:
-	go run ./cmd/api -db-dsn=${GREENLIGHT_DB_DSN} -smtp-host=${GREENLIGHT_SMTP_HOST} -smtp-username=${GREENLIGHT_SMTP_USERNAME} -smtp-password=${GREENLIGHT_SMTP_PASSWORD} -smtp-sender=${GREENLIGHT_SMTP_SENDER}
+	go run ./cmd/api -db-dsn=${GREENLIGHT_DB_DSN} \
+		-smtp-host=${GREENLIGHT_SMTP_HOST} \
+		-smtp-username=${GREENLIGHT_SMTP_USERNAME} \
+		-smtp-password=${GREENLIGHT_SMTP_PASSWORD} \
+		-smtp-sender=${GREENLIGHT_SMTP_SENDER}
 
 ## watch: run the application with reloading on file changes
 .PHONY: watch/api
 watch/api:
 	@if command -v air > /dev/null; then \
-		air --build.bin "./bin/api -db-dsn=${GREENLIGHT_DB_DSN} -smtp-host=${GREENLIGHT_SMTP_HOST} -smtp-username=${GREENLIGHT_SMTP_USERNAME} -smtp-password=${GREENLIGHT_SMTP_PASSWORD} -smtp-sender=${GREENLIGHT_SMTP_SENDER}"; \
-		echo "Watching...";\
+		air \
+			--build.cmd "go build -o=./bin/api ./cmd/api" \
+			--build.bin "./bin/api -db-dsn=${GREENLIGHT_DB_DSN} \
+				-smtp-host=${GREENLIGHT_SMTP_HOST} \
+				-smtp-username=${GREENLIGHT_SMTP_USERNAME} \
+				-smtp-password=${GREENLIGHT_SMTP_PASSWORD} \
+				-smtp-sender=${GREENLIGHT_SMTP_SENDER}"; \
+		echo "Watching..."; \
 	else \
 		echo "Go's 'air' is not installed. Please run 'go install github.com/air-verse/air@latest'";\
 	fi
@@ -46,6 +61,7 @@ db/migrations/new:
 
 ## db/migrations/up: apply all up database migrations
 .PHONY: db/migrations/up
+db/migrations/up: message := Are you sure you want to apply all up database migrations? This action may modify your database schema.
 db/migrations/up: confirm
 	@echo "Running up migrations..."
 	migrate -path ./migrations -database ${GREENLIGHT_DB_DSN} up
@@ -88,7 +104,8 @@ build/api:
 	go build -ldflags="-s -w" -o=./bin/api ./cmd/api
 	GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o=./bin/linux_amd64/api ./cmd/api
 	
-## Clean build artifacts
+## clean: Clean build artifacts
 .PHONY: clean
-clean:
+clean: message := Are you sure you want to clean build artifacts?
+clean: confirm
 	rm -rf bin
