@@ -25,7 +25,12 @@ type config struct {
 	port int
 	env  string
 	db   struct {
-		dsn          string
+		database     string
+		password     string
+		username     string
+		port         string
+		host         string
+		schema       string
 		maxOpenConns int
 		maxIdleConns int
 		maxIdleTime  time.Duration
@@ -61,7 +66,12 @@ func main() {
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
 
-	flag.StringVar(&cfg.db.dsn, "db-dsn", "", "PostgreSQL DSN")
+	flag.StringVar(&cfg.db.database, "db-database", "", "PostgreSQL Database")
+	flag.StringVar(&cfg.db.password, "db-password", "", "PostgreSQL Password")
+	flag.StringVar(&cfg.db.username, "db-username", "", "PostgreSQL Username")
+	flag.StringVar(&cfg.db.port, "db-port", "", "PostgreSQL Port")
+	flag.StringVar(&cfg.db.host, "db-host", "", "PostgreSQL Host")
+	flag.StringVar(&cfg.db.schema, "db-schema", "", "PostgreSQL Schema")
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "PostgreSQL max open connections")
 	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "PostgreSQL max idle connections")
 	flag.DurationVar(&cfg.db.maxIdleTime, "db-max-idle-time", 15*time.Minute, "PostgreSQL max connection idle time")
@@ -129,7 +139,8 @@ func main() {
 }
 
 func openDB(cfg config) (*sql.DB, error) {
-	db, err := sql.Open("postgres", cfg.db.dsn)
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&search_path=%s", cfg.db.username, cfg.db.password, cfg.db.host, cfg.db.port, cfg.db.database, cfg.db.schema)
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
 	}

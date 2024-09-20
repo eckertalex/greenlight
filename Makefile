@@ -26,7 +26,13 @@ confirm:
 ## run/api: run the cmd/api application
 .PHONY: run/api
 run/api:
-	go run ./cmd/api -db-dsn=${GREENLIGHT_DB_DSN} \
+	@go run ./cmd/api \
+		-db-database=${GREENLIGHT_DB_DATABASE} \
+		-db-password=${GREENLIGHT_DB_PASSWORD} \
+		-db-username=${GREENLIGHT_DB_USERNAME} \
+		-db-port=${GREENLIGHT_DB_PORT} \
+		-db-host=${GREENLIGHT_DB_HOST} \
+		-db-schema=${GREENLIGHT_DB_SCHEMA} \
 		-smtp-host=${GREENLIGHT_SMTP_HOST} \
 		-smtp-username=${GREENLIGHT_SMTP_USERNAME} \
 		-smtp-password=${GREENLIGHT_SMTP_PASSWORD} \
@@ -35,23 +41,23 @@ run/api:
 ## watch: run the application with reloading on file changes
 .PHONY: watch/api
 watch/api:
-	@if command -v air > /dev/null; then \
-		air \
-			--build.cmd "go build -o=./bin/api ./cmd/api" \
-			--build.bin "./bin/api -db-dsn=${GREENLIGHT_DB_DSN} \
-				-smtp-host=${GREENLIGHT_SMTP_HOST} \
-				-smtp-username=${GREENLIGHT_SMTP_USERNAME} \
-				-smtp-password=${GREENLIGHT_SMTP_PASSWORD} \
-				-smtp-sender=${GREENLIGHT_SMTP_SENDER}"; \
-		echo "Watching..."; \
-	else \
-		echo "Go's 'air' is not installed. Please run 'go install github.com/air-verse/air@latest'";\
-	fi
+	@air --build.cmd "go build -o=./bin/api ./cmd/api" \
+		--build.bin "./bin/api \
+			-db-database=${GREENLIGHT_DB_DATABASE} \
+			-db-password=${GREENLIGHT_DB_PASSWORD} \
+			-db-username=${GREENLIGHT_DB_USERNAME} \
+			-db-port=${GREENLIGHT_DB_PORT} \
+			-db-host=${GREENLIGHT_DB_HOST} \
+			-db-schema=${GREENLIGHT_DB_SCHEMA} \
+			-smtp-host=${GREENLIGHT_SMTP_HOST} \
+			-smtp-username=${GREENLIGHT_SMTP_USERNAME} \
+			-smtp-password=${GREENLIGHT_SMTP_PASSWORD} \
+			-smtp-sender=${GREENLIGHT_SMTP_SENDER}"
 
 ## db/psql: connect to the database using psql
 .PHONY: db/psql
 db/psql:
-	psql ${GREENLIGHT_DB_DSN}
+	@psql "postgres://${GREENLIGHT_DB_USERNAME}:${GREENLIGHT_DB_PASSWORD}@${GREENLIGHT_DB_HOST}:${GREENLIGHT_DB_PORT}/${GREENLIGHT_DB_DATABASE}?sslmode=disable"
 
 ## db/migrations/new name=$1: create a new database migration
 .PHONY: db/migrations/new
@@ -64,7 +70,7 @@ db/migrations/new:
 db/migrations/up: message := Are you sure you want to apply all up database migrations? This action may modify your database schema.
 db/migrations/up: confirm
 	@echo "Running up migrations..."
-	migrate -path ./migrations -database ${GREENLIGHT_DB_DSN} up
+	@migrate -path ./migrations -database "postgres://${GREENLIGHT_DB_USERNAME}:${GREENLIGHT_DB_PASSWORD}@${GREENLIGHT_DB_HOST}:${GREENLIGHT_DB_PORT}/${GREENLIGHT_DB_DATABASE}?sslmode=disable&search_path=${GREENLIGHT_DB_SCHEMA}" up
 
 # ==================================================================================== #
 # QUALITY CONTROL
@@ -109,3 +115,5 @@ build/api:
 clean: message := Are you sure you want to clean build artifacts?
 clean: confirm
 	rm -rf bin
+	
+# vim: set tabstop=4 shiftwidth=4 noexpandtab
