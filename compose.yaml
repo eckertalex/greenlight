@@ -11,8 +11,7 @@ services:
       - psql_volume:/var/lib/postgresql/data
 
   api:
-    image: golang:1.23
-    working_dir: /app
+    build: .
     volumes:
       - .:/app
       - go-modules:/go/pkg/mod
@@ -22,11 +21,7 @@ services:
       - db
     env_file:
       - .env
-    command: >
-      sh -c "
-        go install github.com/air-verse/air@latest &&
-        make watch/api
-      "
+    command: make watch/api
     develop:
       watch:
         - action: sync
