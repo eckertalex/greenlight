@@ -70,7 +70,7 @@ db/migrations/new:
 db/migrations/up: message := Are you sure you want to apply all up database migrations? This action may modify your database schema.
 db/migrations/up: confirm
 	@echo "Running up migrations..."
-	@migrate -path ./migrations -database "postgres://${GREENLIGHT_DB_USERNAME}:${GREENLIGHT_DB_PASSWORD}@${GREENLIGHT_DB_HOST}:${GREENLIGHT_DB_PORT}/${GREENLIGHT_DB_DATABASE}?sslmode=disable&search_path=${GREENLIGHT_DB_SCHEMA}" up
+	docker run -v ./migrations:/migrations --network greenlight_default migrate/migrate -path=/migrations/ -database "postgres://${GREENLIGHT_DB_USERNAME}:${GREENLIGHT_DB_PASSWORD}@${GREENLIGHT_DB_HOST}:${GREENLIGHT_DB_PORT}/${GREENLIGHT_DB_DATABASE}?sslmode=disable&search_path=${GREENLIGHT_DB_SCHEMA}" up
 
 # ==================================================================================== #
 # QUALITY CONTROL
