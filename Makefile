@@ -73,7 +73,7 @@ docker/down:
 .PHONY: docker/destroy
 docker/destroy: message := Are you sure you want to destroy the docker cluster? This action is not reversible.
 docker/destroy: confirm
-	echo "TODO"
+	@docker compose down --remove-orphans --rmi all --volumes
 
 ## db/psql: connect to the database using psql
 .PHONY: db/psql
