@@ -54,10 +54,31 @@ watch/api:
 			-smtp-password=${GREENLIGHT_SMTP_PASSWORD} \
 			-smtp-sender=${GREENLIGHT_SMTP_SENDER}"
 
+## docker/up: Create and run the docker cluster
+.PHONY: docker/up
+docker/up:
+	docker compose up --detach
+
+## docker/logs: Follow docker logs
+.PHONY: docker/logs
+docker/logs:
+	docker compose logs --follow
+
+## docker/down: Shutdown the docker cluster
+.PHONY: docker/down
+docker/down:
+	docker compose down
+
+## docker/destroy: Destroy docker cluster
+.PHONY: docker/destroy
+docker/destroy: message := Are you sure you want to destroy the docker cluster? This action is not reversible.
+docker/destroy: confirm
+	echo "TODO"
+
 ## db/psql: connect to the database using psql
 .PHONY: db/psql
 db/psql:
-	@psql "postgres://${GREENLIGHT_DB_USERNAME}:${GREENLIGHT_DB_PASSWORD}@${GREENLIGHT_DB_HOST}:${GREENLIGHT_DB_PORT}/${GREENLIGHT_DB_DATABASE}?sslmode=disable"
+	@docker compose exec db psql -U ${GREENLIGHT_DB_USERNAME} -d ${GREENLIGHT_DB_DATABASE}
 
 ## db/migrations/new name=$1: create a new database migration
 .PHONY: db/migrations/new
@@ -70,7 +91,31 @@ db/migrations/new:
 db/migrations/up: message := Are you sure you want to apply all up database migrations? This action may modify your database schema.
 db/migrations/up: confirm
 	@echo "Running up migrations..."
-	docker run -v ./migrations:/migrations --network greenlight_default migrate/migrate -path=/migrations/ -database "postgres://${GREENLIGHT_DB_USERNAME}:${GREENLIGHT_DB_PASSWORD}@${GREENLIGHT_DB_HOST}:${GREENLIGHT_DB_PORT}/${GREENLIGHT_DB_DATABASE}?sslmode=disable&search_path=${GREENLIGHT_DB_SCHEMA}" up
+	@docker run -v ./migrations:/migrations --network greenlight_default migrate/migrate -path=/migrations/ -database "postgres://${GREENLIGHT_DB_USERNAME}:${GREENLIGHT_DB_PASSWORD}@${GREENLIGHT_DB_HOST}:${GREENLIGHT_DB_PORT}/${GREENLIGHT_DB_DATABASE}?sslmode=disable&search_path=${GREENLIGHT_DB_SCHEMA}" up
+
+## db/migrations/down: apply all up database migrations
+.PHONY: db/migrations/down
+db/migrations/down: message := Are you sure you want to apply all up database migrations? This action may modify your database schema.
+db/migrations/down: confirm
+	@echo "Running down migrations..."
+	@docker run -v ./migrations:/migrations --network greenlight_default migrate/migrate -path=/migrations/ -database "postgres://${GREENLIGHT_DB_USERNAME}:${GREENLIGHT_DB_PASSWORD}@${GREENLIGHT_DB_HOST}:${GREENLIGHT_DB_PORT}/${GREENLIGHT_DB_DATABASE}?sslmode=disable&search_path=${GREENLIGHT_DB_SCHEMA}" down
+
+## db/migrations/goto version=$1: migrate to  specific version number
+.PHONY: db/migrations/goto
+db/migrations/goto: message := Are you sure you want to apply this database migration? This action may modify your database schema.
+db/migrations/goto: confirm
+	@docker run -v ./migrations:/migrations --network greenlight_default migrate/migrate -path=/migrations/ -database "postgres://${GREENLIGHT_DB_USERNAME}:${GREENLIGHT_DB_PASSWORD}@${GREENLIGHT_DB_HOST}:${GREENLIGHT_DB_PORT}/${GREENLIGHT_DB_DATABASE}?sslmode=disable&search_path=${GREENLIGHT_DB_SCHEMA}" goto ${version}
+
+## db/migrations/force version=$1: force database migration
+.PHONY: db/migrations/force
+db/migrations/force: message := Are you sure you want to apply this database migration? This action may modify your database schema.
+db/migrations/force: confirm
+	@docker run -v ./migrations:/migrations --network greenlight_default migrate/migrate -path=/migrations/ -database "postgres://${GREENLIGHT_DB_USERNAME}:${GREENLIGHT_DB_PASSWORD}@${GREENLIGHT_DB_HOST}:${GREENLIGHT_DB_PORT}/${GREENLIGHT_DB_DATABASE}?sslmode=disable&search_path=${GREENLIGHT_DB_SCHEMA}" force ${version}
+
+## db/migrations/version: print the current in-use migration version
+.PHONY: db/migrations/version
+db/migrations/version:
+	@docker run -v ./migrations:/migrations --network greenlight_default migrate/migrate -path=/migrations/ -database "postgres://${GREENLIGHT_DB_USERNAME}:${GREENLIGHT_DB_PASSWORD}@${GREENLIGHT_DB_HOST}:${GREENLIGHT_DB_PORT}/${GREENLIGHT_DB_DATABASE}?sslmode=disable&search_path=${GREENLIGHT_DB_SCHEMA}" version
 
 # ==================================================================================== #
 # QUALITY CONTROL
