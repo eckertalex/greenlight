@@ -28,32 +28,17 @@ services:
         "-path",
         "/migrations",
         "-database",
-        "postgres://${GREENLIGHT_DB_USERNAME}:${GREENLIGHT_DB_PASSWORD}@db:5432/${GREENLIGHT_DB_DATABASE}?sslmode=disable&search_path=${GREENLIGHT_DB_SCHEMA}",
+        "postgres://${GREENLIGHT_DB_USERNAME}:${GREENLIGHT_DB_PASSWORD}@${GREENLIGHT_DB_HOST}:${GREENLIGHT_DB_PORT}/${GREENLIGHT_DB_DATABASE}?sslmode=disable&search_path=${GREENLIGHT_DB_SCHEMA}",
         "up",
       ]
     depends_on:
       db:
         condition: service_healthy
 
-  seed:
+  api:
     build:
       context: .
-      dockerfile: seed.Dockerfile
-    env_file:
-      - .env
-    command:
-      [
-        "-database",
-        "postgres://${GREENLIGHT_DB_USERNAME}:${GREENLIGHT_DB_PASSWORD}@db:5432/${GREENLIGHT_DB_DATABASE}?sslmode=disable&search_path=${GREENLIGHT_DB_SCHEMA}",
-      ]
-    depends_on:
-      db:
-        condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
-
-  api:
-    build: .
+      dockerfile: Dockerfile.dev
     volumes:
       - .:/app
     ports:

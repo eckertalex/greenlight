@@ -7,38 +7,52 @@ import (
 )
 
 type user struct {
-	Name     string
-	Email    string
-	Password string
+	Name        string
+	Email       string
+	Password    string
+	Activated   bool
+	Permissions data.Permissions
 }
 
 func (app *application) seedUsers() {
-	users := []user{
-		{
-			Name:     "Admin",
-			Email:    "admin@greenlight.go",
-			Password: "admin123",
-		},
-		{
-			Name:     "Alice",
-			Email:    "alice@example.com",
-			Password: "alice123",
-		},
-		{
-			Name:     "Bob",
-			Email:    "bob@example.com",
-			Password: "bob123",
-		},
-		{
-			Name:     "Charlie",
-			Email:    "charlie@example.com",
-			Password: "charlie123",
-		},
+	admin := user{
+		Name:        "Admin User",
+		Email:       "admin@greenlight.go",
+		Password:    "admin123",
+		Activated:   true,
+		Permissions: data.Permissions{"movies:read", "movies:write"},
 	}
 
-	for _, user := range users {
-		app.seedUser(&user)
+	app.logger.Info("seeding admin user...")
+	app.seedUser(&admin)
+	app.logger.Info("done seeding admin user")
+
+	activatedUser := user{
+		Name:        "Activated User",
+		Email:       "activated@greenlight.go",
+		Password:    "activated123",
+		Activated:   true,
+		Permissions: data.Permissions{"movies:read"},
 	}
+
+	app.logger.Info("seeding activated user...")
+	app.seedUser(&activatedUser)
+	app.logger.Info("done seeding activated user")
+
+	unactivatedUser := user{
+		Name:        "Unactivated User",
+		Email:       "unactivated@greenlight.go",
+		Password:    "unactivated123",
+		Activated:   false,
+		Permissions: data.Permissions{"movies:read"},
+	}
+
+	app.logger.Info("seeding unactivated user...")
+	app.seedUser(&unactivatedUser)
+	app.logger.Info("done seeding unactivated user")
+}
+
+func (app *application) seedAdminUser() {
 }
 
 func (app *application) seedUser(user *user) {
@@ -60,12 +74,12 @@ func (app *application) seedUser(user *user) {
 		case errors.Is(err, data.ErrDuplicateEmail):
 			app.logger.Error(err.Error(), "a user with this email address already exists", domainUser.Email)
 		default:
-			app.logger.Error(err.Error(), "unknown error when inserting user", domainUser.Email)
+			app.logger.Error(err.Error(), "error inserting user", domainUser.Email)
 		}
 		return
 	}
 
-	err = app.models.Permissions.AddForUser(domainUser.ID, "movies:read")
+	err = app.models.Permissions.AddForUser(domainUser.ID, user.Permissions...)
 	if err != nil {
 		app.logger.Error(err.Error(), "failed to add permissions for user", domainUser.Email)
 		return

@@ -54,6 +54,10 @@ func main() {
 	app.seedUsers()
 	logger.Info("done seeding users")
 
+	logger.Info("seeding movies...")
+	app.seedMovies()
+	logger.Info("done seeding movies")
+
 	logger.Info("database seeded successfully")
 }
 
