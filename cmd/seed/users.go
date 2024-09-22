@@ -52,9 +52,6 @@ func (app *application) seedUsers() {
 	app.logger.Info("done seeding unactivated user")
 }
 
-func (app *application) seedAdminUser() {
-}
-
 func (app *application) seedUser(user *user) {
 	domainUser := &data.User{
 		Name:      user.Name,

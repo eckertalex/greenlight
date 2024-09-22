@@ -1,6 +1,6 @@
 #!/bin/bash
 
-API_URL="http://localhost:4000/v1"
+API_URL="http://localhost:45067/v1"
 AUTH_URL="$API_URL/tokens/authentication"
 EMAIL="admin@greenlight.go"
 PASSWORD="admin123"

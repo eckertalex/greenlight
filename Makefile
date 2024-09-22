@@ -27,6 +27,7 @@ confirm:
 .PHONY: run/api
 run/api:
 	@go run ./cmd/api \
+		-port=${GREENLIGHT_PORT} \
 		-db-database=${GREENLIGHT_DB_DATABASE} \
 		-db-password=${GREENLIGHT_DB_PASSWORD} \
 		-db-username=${GREENLIGHT_DB_USERNAME} \
@@ -37,22 +38,6 @@ run/api:
 		-smtp-username=${GREENLIGHT_SMTP_USERNAME} \
 		-smtp-password=${GREENLIGHT_SMTP_PASSWORD} \
 		-smtp-sender=${GREENLIGHT_SMTP_SENDER}
-
-## watch: run the application with reloading on file changes
-.PHONY: watch/api
-watch/api:
-	@air --build.cmd "go build -o=./tmp/api ./cmd/api" \
-		--build.bin "./tmp/api \
-			-db-database=${GREENLIGHT_DB_DATABASE} \
-			-db-password=${GREENLIGHT_DB_PASSWORD} \
-			-db-username=${GREENLIGHT_DB_USERNAME} \
-			-db-port=${GREENLIGHT_DB_PORT} \
-			-db-host=${GREENLIGHT_DB_HOST} \
-			-db-schema=${GREENLIGHT_DB_SCHEMA} \
-			-smtp-host=${GREENLIGHT_SMTP_HOST} \
-			-smtp-username=${GREENLIGHT_SMTP_USERNAME} \
-			-smtp-password=${GREENLIGHT_SMTP_PASSWORD} \
-			-smtp-sender=${GREENLIGHT_SMTP_SENDER}"
 
 # ==================================================================================== #
 # QUALITY CONTROL
@@ -110,23 +95,28 @@ clean: confirm
 ## docker/up: Create and run the docker cluster
 .PHONY: docker/up
 docker/up:
-	docker compose -f compose.dev.yaml up --detach
+	@docker compose -f compose.dev.yaml up --detach
 
 ## docker/logs: Follow docker logs
 .PHONY: docker/logs
 docker/logs:
-	docker compose -f compose.dev.yaml logs --follow
+	@docker compose -f compose.dev.yaml logs --follow
+
+## docker/status: Print docker compose status
+.PHONY: docker/status
+docker/status:
+	@docker compose -f compose.dev.yaml ps
 
 ## docker/down: Shutdown the docker cluster
 .PHONY: docker/down
 docker/down:
-	docker compose -f compose.dev.yaml down
+	@docker compose -f compose.dev.yaml down
 
 ## docker/destroy: Destroy docker cluster
 .PHONY: docker/destroy
 docker/destroy: message := Are you sure you want to destroy the docker cluster? This action is not reversible.
 docker/destroy: confirm
-	docker compose -f compose.dev.yaml down --remove-orphans --rmi all --volumes
+	@docker compose -f compose.dev.yaml down --remove-orphans --rmi all --volumes
 
 # ==================================================================================== #
 # DB

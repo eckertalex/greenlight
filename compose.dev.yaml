@@ -1,4 +1,29 @@
 services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./:/app
+    ports:
+      - "${GREENLIGHT_PORT}:${GREENLIGHT_PORT}"
+    command:
+      [
+        "--",
+        "-db-database=${GREENLIGHT_DB_DATABASE}",
+        "-db-password=${GREENLIGHT_DB_PASSWORD}",
+        "-db-username=${GREENLIGHT_DB_USERNAME}",
+        "-db-port=${GREENLIGHT_DB_PORT}",
+        "-db-host=${GREENLIGHT_DB_HOST}",
+        "-db-schema=${GREENLIGHT_DB_SCHEMA}",
+        "-smtp-host=${GREENLIGHT_SMTP_HOST}",
+        "-smtp-username=${GREENLIGHT_SMTP_USERNAME}",
+        "-smtp-password=${GREENLIGHT_SMTP_PASSWORD}",
+        "-smtp-sender=${GREENLIGHT_SMTP_SENDER}",
+      ]
+    depends_on:
+      - db
+
   db:
     image: postgres:latest
     environment:
@@ -34,28 +59,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    volumes:
-      - .:/app
-    ports:
-      - "4000:4000"
-    depends_on:
-      - db
-    env_file:
-      - .env
-    command: make watch/api
-    develop:
-      watch:
-        - action: sync
-          path: .
-          target: /app
-          ignore:
-            - .git/
-            - .gitignore
 
 volumes:
   psql_volume:
