@@ -110,23 +110,23 @@ clean: confirm
 ## docker/up: Create and run the docker cluster
 .PHONY: docker/up
 docker/up:
-	docker compose up --detach
+	docker compose -f compose.dev.yaml up --detach
 
 ## docker/logs: Follow docker logs
 .PHONY: docker/logs
 docker/logs:
-	docker compose logs --follow
+	docker compose -f compose.dev.yaml logs --follow
 
 ## docker/down: Shutdown the docker cluster
 .PHONY: docker/down
 docker/down:
-	docker compose down
+	docker compose -f compose.dev.yaml down
 
 ## docker/destroy: Destroy docker cluster
 .PHONY: docker/destroy
 docker/destroy: message := Are you sure you want to destroy the docker cluster? This action is not reversible.
 docker/destroy: confirm
-	docker compose down --remove-orphans --rmi all --volumes
+	docker compose -f compose.dev.yaml down --remove-orphans --rmi all --volumes
 
 # ==================================================================================== #
 # DB
@@ -135,7 +135,7 @@ docker/destroy: confirm
 ## db/psql: connect to the database using psql
 .PHONY: db/psql
 db/psql:
-	@docker compose exec db psql -U ${GREENLIGHT_DB_USERNAME} -d ${GREENLIGHT_DB_DATABASE}
+	@docker compose -f compose.dev.yaml exec db psql -U ${GREENLIGHT_DB_USERNAME} -d ${GREENLIGHT_DB_DATABASE}
 
 ## db/seed: seed database
 .PHONY: db/seed
