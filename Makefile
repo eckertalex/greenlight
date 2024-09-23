@@ -133,6 +133,7 @@ db/seed: message := Are you sure you want to seed the database? This action may 
 db/seed: confirm
 	@docker build -t greenlight-seed -f Dockerfile.seed .
 	@docker run --rm --network greenlight_default greenlight-seed -database "postgres://${GREENLIGHT_DB_USERNAME}:${GREENLIGHT_DB_PASSWORD}@${GREENLIGHT_DB_HOST}:${GREENLIGHT_DB_PORT}/${GREENLIGHT_DB_DATABASE}?sslmode=disable&search_path=${GREENLIGHT_DB_SCHEMA}"
+	@docker rmi greenlight-seed
 
 ## db/migrations/new name=$1: create a new database migration
 .PHONY: db/migrations/new
