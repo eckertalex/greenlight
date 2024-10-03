@@ -76,6 +76,7 @@ clean: confirm
 run/api:
 	@go run ./cmd/api \
 		-port=${GREENLIGHT_PORT} \
+		-env=${GREENLIGHT_ENV} \
 		-db-database=${GREENLIGHT_DB_DATABASE} \
 		-db-password=${GREENLIGHT_DB_PASSWORD} \
 		-db-username=${GREENLIGHT_DB_USERNAME} \
