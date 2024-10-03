@@ -1,15 +1,19 @@
-FROM golang:1.23-alpine
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
-RUN apk add --no-cache make git ca-certificates
+RUN apk add --no-cache git ca-certificates
 
 COPY go.mod go.sum ./
 
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
 
 COPY . .
 
-RUN make build/seed
+RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build go build -o=./seed ./cmd/seed
 
-ENTRYPOINT ["/app/tmp/seed"]
+FROM scratch
+
+COPY --from=builder /app/seed /bin/seed
+
+ENTRYPOINT ["/bin/seed"]

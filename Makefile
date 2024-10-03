@@ -20,26 +20,6 @@ confirm:
 	fi
 
 # ==================================================================================== #
-# DEVELOPMENT
-# ==================================================================================== #
-
-## run/api: run the cmd/api application
-.PHONY: run/api
-run/api:
-	@go run ./cmd/api \
-		-port=${GREENLIGHT_PORT} \
-		-db-database=${GREENLIGHT_DB_DATABASE} \
-		-db-password=${GREENLIGHT_DB_PASSWORD} \
-		-db-username=${GREENLIGHT_DB_USERNAME} \
-		-db-port=${GREENLIGHT_DB_PORT} \
-		-db-host=${GREENLIGHT_DB_HOST} \
-		-db-schema=${GREENLIGHT_DB_SCHEMA} \
-		-smtp-host=${GREENLIGHT_SMTP_HOST} \
-		-smtp-username=${GREENLIGHT_SMTP_USERNAME} \
-		-smtp-password=${GREENLIGHT_SMTP_PASSWORD} \
-		-smtp-sender=${GREENLIGHT_SMTP_SENDER}
-
-# ==================================================================================== #
 # QUALITY CONTROL
 # ==================================================================================== #
 
@@ -66,6 +46,11 @@ audit:
 	@echo "Running tests..."
 	go test -race -vet=off ./...
 
+## itest: run integration tests
+.PHONY: itest
+itest:
+	./scripts/api-smoke-test.sh
+
 # ==================================================================================== #
 # BUILD
 # ==================================================================================== #
@@ -76,17 +61,31 @@ build/api:
 	@echo "Building cmd/api..."
 	go build -ldflags="-s -w" -o=./tmp/api ./cmd/api
 	
-## build/seed: build the cmd/seed application
-.PHONY: build/seed
-build/seed:
-	@echo "Building cmd/seed..."
-	go build -ldflags="-s -w" -o=./tmp/seed ./cmd/seed
-	
 ## clean: Clean build artifacts
 .PHONY: clean
 clean: message := Are you sure you want to clean build artifacts?
 clean: confirm
 	rm -rf tmp
+
+# ==================================================================================== #
+# DEVELOPMENT
+# ==================================================================================== #
+
+## run/api: run the cmd/api application
+.PHONY: run/api
+run/api:
+	@go run ./cmd/api \
+		-port=${GREENLIGHT_PORT} \
+		-db-database=${GREENLIGHT_DB_DATABASE} \
+		-db-password=${GREENLIGHT_DB_PASSWORD} \
+		-db-username=${GREENLIGHT_DB_USERNAME} \
+		-db-port=${GREENLIGHT_DB_PORT} \
+		-db-host=${GREENLIGHT_DB_HOST} \
+		-db-schema=${GREENLIGHT_DB_SCHEMA} \
+		-smtp-host=${GREENLIGHT_SMTP_HOST} \
+		-smtp-username=${GREENLIGHT_SMTP_USERNAME} \
+		-smtp-password=${GREENLIGHT_SMTP_PASSWORD} \
+		-smtp-sender=${GREENLIGHT_SMTP_SENDER}
 	
 # ==================================================================================== #
 # DOCKER
@@ -131,9 +130,8 @@ db/psql:
 .PHONY: db/seed
 db/seed: message := Are you sure you want to seed the database? This action may modify your database data.
 db/seed: confirm
-	@docker build -t greenlight-seed -f Dockerfile.seed .
+	@docker buildx build -t greenlight-seed -f Dockerfile.seed .
 	@docker run --rm --network greenlight_default greenlight-seed -database "postgres://${GREENLIGHT_DB_USERNAME}:${GREENLIGHT_DB_PASSWORD}@${GREENLIGHT_DB_HOST}:${GREENLIGHT_DB_PORT}/${GREENLIGHT_DB_DATABASE}?sslmode=disable&search_path=${GREENLIGHT_DB_SCHEMA}"
-	@docker rmi greenlight-seed
 
 ## db/migrations/new name=$1: create a new database migration
 .PHONY: db/migrations/new
