@@ -52,22 +52,6 @@ itest:
 	./scripts/api-smoke-test.sh
 
 # ==================================================================================== #
-# BUILD
-# ==================================================================================== #
-
-## build/api: build the cmd/api application
-.PHONY: build/api
-build/api:
-	@echo "Building cmd/api..."
-	go build -ldflags="-s -w" -o=./tmp/api ./cmd/api
-	
-## clean: Clean build artifacts
-.PHONY: clean
-clean: message := Are you sure you want to clean build artifacts?
-clean: confirm
-	rm -rf tmp
-
-# ==================================================================================== #
 # DEVELOPMENT
 # ==================================================================================== #
 
