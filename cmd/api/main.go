@@ -56,7 +56,7 @@ type application struct {
 	config config
 	logger *slog.Logger
 	models data.Models
-	mailer mailer.Mailer
+	mailer *mailer.Mailer
 	wg     sync.WaitGroup
 }
 
@@ -124,11 +124,17 @@ func main() {
 		return time.Now().Unix()
 	}))
 
+	mailer, err := mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
 	app := &application{
 		config: cfg,
 		logger: logger,
 		models: data.NewModels(db),
-		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
+		mailer: mailer,
 	}
 
 	err = app.serve()
